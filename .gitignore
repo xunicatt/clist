@@ -1,0 +1,6 @@
+.vscode
+a.out
+clist.o
+libclist.a
+main.c
+main.o
