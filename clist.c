@@ -156,6 +156,7 @@ clist_remove_front(
 
     free(node->__ptr);
     free(node);
+    l->__list_size--;
     return CLIST_SUCCESS;
 }
 
@@ -172,6 +173,7 @@ clist_remove_rear(
 
     free(node->__ptr);
     free(node);
+    l->__list_size--;
     return CLIST_SUCCESS;
 }
 
@@ -204,6 +206,7 @@ clist_remove_at(
 
     free(node->__ptr);
     free(node);
+    l->__list_size--;
     return CLIST_SUCCESS;
 }
 
