@@ -116,7 +116,7 @@ for(size_t i = 0; i < s; i++) {
 //while calling call-back function at each node
 void sum(CList_Node_t *n, void *data) {
     int *sum_val = (int *)data;
-    *sum_val = clist_node_unwrap_safe_as(n, int, 0);
+    *sum_val += clist_node_unwrap_safe_as(n, int, 0);
 }
 
 //in other function
