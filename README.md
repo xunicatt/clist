@@ -6,6 +6,8 @@ A very simple to use Linked List libray for C.
 $ make install #to install
 $ make uninstall #to uninstall
 ```
++ Header File: clist.h
++ Static Library File: libclist.a [-lclist]
 
 # Documentation
 + Initialise the Object:
