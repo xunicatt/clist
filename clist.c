@@ -1,5 +1,18 @@
 #include "clist.h"
 
+struct clist_node_t {
+    void *__ptr;
+    struct clist_node_t *__prev;
+    struct clist_node_t *__next;
+};
+
+struct clist_t {
+    struct clist_node_t *__front;
+    struct clist_node_t *__rear;
+    size_t __obj_size;
+    size_t __list_size;
+};
+
 static const char* __clist_error_msg[__MAX_ERR_SIZE] = {
     "success",
     "got null ptr",
@@ -7,19 +20,19 @@ static const char* __clist_error_msg[__MAX_ERR_SIZE] = {
     "index out of bound"
 };
 
-CList_Error_Info_t
+const char *
 clist_get_error_info(
-    CList_Error_t err
+    const clist_error_t err
 ) {
-    return (CList_Error_Info_t){err, __clist_error_msg[err]};
+    return __clist_error_msg[err];
 }
 
-CList_Node_t*
+static clist_node_t*
 __clist_create_node(
-    void *obj, 
+    const void *obj, 
     size_t obj_size
 ) {
-    CList_Node_t *node = (CList_Node_t *)malloc(sizeof(CList_Node_t));
+    clist_node_t *node = (clist_node_t *)malloc(sizeof(clist_node_t));
     if(node == NULL) return NULL;
 
     node->__prev = NULL;
@@ -36,29 +49,30 @@ __clist_create_node(
 
 void*
 __clist_get_raw_ptr(
-    CList_Node_t *n
+    const clist_node_t *n
 ) {
+    if(n == NULL) return NULL;
     return n->__ptr;
 }
 
-CList_Error_t 
+clist_t*
 clist_init(
-    CList_t *l, 
-    size_t object_size
-) {
-    if(l == NULL) return CLIST_GOT_NULL_PTR;
-    
+    const size_t object_size
+) { 
+    clist_t *l = (clist_t*)malloc(sizeof(clist_t));
+    if(l == NULL) return NULL;
+
     l->__front = l->__rear = NULL;
     l->__list_size = 0;
     l->__obj_size = object_size;
 
-    return CLIST_SUCCESS;
+    return l;
 }
 
-CList_Error_t
+clist_error_t
 clist_insert_front(
-    CList_t *l, 
-    void *obj
+    clist_t *l, 
+    const void *obj
 ) {
     if(l == NULL || obj == NULL) return CLIST_GOT_NULL_PTR;
 
@@ -70,7 +84,7 @@ clist_insert_front(
         return CLIST_SUCCESS;
     }
 
-    CList_Node_t* new_front = __clist_create_node(obj, l->__obj_size);  
+    clist_node_t* new_front = __clist_create_node(obj, l->__obj_size);  
     if(new_front == NULL) return CLIST_MEM_ALLOC_FAIL;
     
     new_front->__next = l->__front;
@@ -81,10 +95,10 @@ clist_insert_front(
     return CLIST_SUCCESS;
 }
 
-CList_Error_t
+clist_error_t
 clist_insert_rear(
-    CList_t *l,
-    void *obj
+    clist_t *l,
+    const void *obj
 ) {
     if(l == NULL || obj == NULL) return CLIST_GOT_NULL_PTR;
 
@@ -95,7 +109,7 @@ clist_insert_rear(
         return CLIST_SUCCESS;
     }
 
-    CList_Node_t* new_rear = __clist_create_node(obj, l->__obj_size);  
+    clist_node_t* new_rear = __clist_create_node(obj, l->__obj_size);  
     if(new_rear == NULL) return CLIST_MEM_ALLOC_FAIL;
 
     new_rear->__prev = l->__rear;
@@ -106,10 +120,10 @@ clist_insert_rear(
     return CLIST_SUCCESS;
 }
 
-CList_Error_t
+clist_error_t
 clist_insert_at(
-    CList_t* l,
-    void* obj,
+    clist_t* l,
+    const void* obj,
     size_t index
 ) {
     if(l == NULL || obj == NULL) return CLIST_GOT_NULL_PTR;
@@ -117,7 +131,7 @@ clist_insert_at(
     if(index == 0) return clist_insert_front(l, obj);
     if(index >= l->__list_size) return clist_insert_rear(l, obj);
 
-    CList_Node_t *node;
+    clist_node_t *node;
     
     if(index < l->__list_size >> 1) {
         node = l->__front;
@@ -131,7 +145,7 @@ clist_insert_at(
             node = node->__prev;
     }
 
-    CList_Node_t* tmp_node = __clist_create_node(obj, l->__obj_size);
+    clist_node_t* tmp_node = __clist_create_node(obj, l->__obj_size);
     if(tmp_node == NULL) return CLIST_MEM_ALLOC_FAIL;
     
     tmp_node->__next = node->__next;
@@ -143,14 +157,14 @@ clist_insert_at(
     return CLIST_SUCCESS;
 }
 
-CList_Error_t
+clist_error_t
 clist_remove_front(
-    CList_t *l
+    clist_t *l
 ) {
     if(l == NULL) return CLIST_GOT_NULL_PTR;
     if(l->__front == NULL) return CLIST_SUCCESS;
 
-    CList_Node_t *node = l->__front;
+    clist_node_t *node = l->__front;
     l->__front = l->__front->__next;
     if(l->__front == NULL) l->__rear = NULL;
 
@@ -160,14 +174,14 @@ clist_remove_front(
     return CLIST_SUCCESS;
 }
 
-CList_Error_t
+clist_error_t
 clist_remove_rear(
-    CList_t *l
+    clist_t *l
 ) {
     if(l == NULL) return CLIST_GOT_NULL_PTR;
     if(l->__rear == NULL) return CLIST_SUCCESS;
 
-    CList_Node_t *node = l->__front;
+    clist_node_t *node = l->__front;
     l->__front = l->__front->__next;
     if(l->__front == NULL) l->__rear = NULL;
 
@@ -177,9 +191,9 @@ clist_remove_rear(
     return CLIST_SUCCESS;
 }
 
-CList_Error_t
+clist_error_t
 clist_remove_at(
-    CList_t *l,
+    clist_t *l,
     size_t index
 ) {
     if(l == NULL) return CLIST_GOT_NULL_PTR;
@@ -188,7 +202,7 @@ clist_remove_at(
     if(index == l->__list_size - 1) return clist_remove_rear(l);
     if(index >= l->__list_size) return CLIST_INDEX_OUT_OF_BOUND;
 
-    CList_Node_t *node;
+    clist_node_t *node;
     
     if(index < l->__list_size >> 1) {
         node = l->__front;
@@ -210,47 +224,47 @@ clist_remove_at(
     return CLIST_SUCCESS;
 }
 
-CList_Node_t*
+clist_node_t*
 clist_begin(
-    CList_t *l
+    const clist_t *l
 ) {
     if(l == NULL) return NULL;
     return l->__front;    
 }
 
-CList_Node_t*
+clist_node_t*
 clist_rbegin(
-    CList_t *l
+    const clist_t *l
 ) {
     if(l == NULL) return NULL;
     return l->__rear;    
 }
 
-CList_Node_t*
+clist_node_t*
 clist_end(
-    CList_t *l
+    const clist_t *l
 ) {
     return NULL;
 }
 
-CList_Node_t*
+clist_node_t*
 clist_rend(
-    CList_t *l
+    const clist_t *l
 ) {
     return NULL;
 }
 
-CList_Node_t*
+clist_node_t*
 clist_next(
-    CList_Node_t* n
+    const clist_node_t* n
 ) {
     if(n == NULL) return NULL;
     return n->__next;
 }
 
-CList_Node_t*
+clist_node_t*
 clist_prev(
-    CList_Node_t* n
+    const clist_node_t* n
 ) {
     if(n == NULL) return NULL;
     return n->__prev;
@@ -258,15 +272,15 @@ clist_prev(
 
 size_t
 clist_size(
-    CList_t* l
+    const clist_t* l
 ) {
     if(l == NULL) return 0;
     return l->__list_size;
 }
 
-CList_Node_t*
+clist_node_t*
 clist_node_at(
-    CList_t* l,
+    const clist_t* l,
     size_t index
 ) {
     if(l == NULL) return NULL;
@@ -274,7 +288,7 @@ clist_node_at(
     if(index == 0) return l->__front;
     if(index == l->__list_size - 1) return l->__rear;
 
-    CList_Node_t* node;
+    clist_node_t* node;
 
     if(index < l->__list_size >> 1) {
         node = l->__front;
@@ -290,15 +304,15 @@ clist_node_at(
     return node;
 }
 
-CList_Error_t
+clist_error_t
 clist_map(
-    CList_t *l,
+    const clist_t *l,
     void *arg,
-    void (*func)(CList_Node_t*,void*)
+    clist_map_function_t* func
 ) {
     if(l == NULL || func == NULL) return CLIST_GOT_NULL_PTR;
     
-    CList_Node_t *n;
+    clist_node_t *n;
     clist_for_each(l, n) {
         func(n, arg);
     }
@@ -306,28 +320,28 @@ clist_map(
     return CLIST_SUCCESS;
 }
 
-CList_Error_t
+clist_error_t
 clist_update_at(
-    CList_t *l,
-    void *val,
-    size_t index
+    const clist_t *l,
+    const void *val,
+    const size_t index
 ) {
     if(l == NULL || val == NULL) return CLIST_GOT_NULL_PTR;
     if(index >= l->__list_size) return CLIST_INDEX_OUT_OF_BOUND;
 
-    CList_Node_t *n = clist_node_at(l, index);
+    clist_node_t *n = clist_node_at(l, index);
     memcpy(n->__ptr, val, l->__obj_size);
     return CLIST_SUCCESS;
 }
 
 void
 clist_free(
-    CList_t *l
+    clist_t *l
 ) {
     if(l == NULL) return;
     if(l->__front == NULL || l->__rear == NULL) return;
 
-    CList_Node_t *tmp = l->__front;
+    clist_node_t *tmp = l->__front;
 
     while(tmp) {
         l->__front = l->__front->__next;
@@ -335,4 +349,6 @@ clist_free(
         free(tmp);
         tmp = l->__front;
     }
+
+    free(l);
 }
